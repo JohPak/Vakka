@@ -1,0 +1,22 @@
+{
+  "name": "vakka",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "run start-dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JohPak/Vakka.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JohPak/Vakka/issues"
+  },
+  "homepage": "https://github.com/JohPak/Vakka#readme",
+  "dependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
