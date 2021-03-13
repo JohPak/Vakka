@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "run start-dev"
+    "start-dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -15,8 +15,5 @@
   "bugs": {
     "url": "https://github.com/JohPak/Vakka/issues"
   },
-  "homepage": "https://github.com/JohPak/Vakka#readme",
-  "dependencies": {
-    "nodemon": "^2.0.7"
-  }
+  "homepage": "https://github.com/JohPak/Vakka#readme"
 }
