@@ -81,8 +81,8 @@ app.post('/', (req, res) => {
         .then(data => { 
         //   console.log(data); // JSON data parsed by `data.json()` call
 
-        console.log(data.result[0].price);
-        console.log(data.result[0].name);
+        try {
+
         for (let i = 0; i < resultamount; i++) {
             searchresult.price = "(" + data.result[i].price + " €)";
             searchresult.saleprice = data.result[i].salePrice;
@@ -103,7 +103,13 @@ app.post('/', (req, res) => {
             if (!data.result[i].weight) {
                 searchresult.weight = `<span class="puuttuu">ei painoa</span>`
             }
-            searchresult.wholecategory = data.result[i].klevu_category;
+            //siivotaan ryönää pois
+            searchresult.wholecategory = data.result[i].klevu_category.replace(`KLEVU_PRODUCT;;`, "");
+                searchresult.wholecategory = searchresult.wholecategory.replace(`@ku@kuCategory@ku@`, "");
+                while (searchresult.wholecategory.match(`;;`) || searchresult.wholecategory.match(`;`)) {
+                    searchresult.wholecategory = searchresult.wholecategory.replace(`;;`, `. `);
+                    searchresult.wholecategory = searchresult.wholecategory.replace(`;`, ` > `);
+                }
             searchresult.category = data.result[i].category;
             searchresult.url = data.result[i].url;
             searchresult.name = data.result[i].name;
@@ -117,6 +123,9 @@ app.post('/', (req, res) => {
             productarray.push(searchresult);
             searchresult = {}; // luodaan uusi objekti seuraavaa tuotetta varten
         }
+    } catch (error) {
+         console.log("ups, for:issa/tuotetiedoissa jotain pielessä" + error);
+    }
 console.log(productarray);
 
 let html = fs.readFileSync("./views/main.html").toString("utf-8");
@@ -130,7 +139,7 @@ let html = fs.readFileSync("./views/main.html").toString("utf-8");
                 <span class="tuotenimi">${productarray[index].name}</span><br>
                 <span class="myyntihinta">${productarray[index].saleprice} €</span>
                 <span class="normihinta">${productarray[index].price}</span>
-                <span class="normihinta">${productarray[index].inStock}</span><br>
+                <span class="varasto">Varastossa: ${productarray[index].instock}</span><br>
                 <span class="paino">${productarray[index].weight}</span><br>
                 <span class="url"><a href="${productarray[index].url}" target="_blank">${productarray[index].url}</a></span><br>
 <br>

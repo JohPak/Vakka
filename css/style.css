@@ -1,0 +1,112 @@
+body {
+    background-color: #3f3f3f;
+    padding: 8px;
+    font-size: 0.9em;
+    line-height: 1.1em;
+}
+.taulukko {
+    color: beige;
+    font-family: helvetica;
+    border: 2px solid #62625e;
+}
+.kuva {
+    height: 100px;
+    padding: 5px;
+    /* padding-top: 10px;
+    padding-left: 10px; */
+}
+.tietodiv {
+    /* padding-left: 10px; */
+    padding: 5px;
+}
+.kuvadiv {
+    float: left;
+    padding-right: 18px;
+}
+:any-link {
+    color: #86867f;
+}
+.url {
+    font-size: 0.8em;
+    padding-bottom: 8px;
+    display: inline-block;
+    padding-top: 5px;
+}
+td {
+    background-color: #62625e;
+    width: 270px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9em;
+}
+form {
+    padding-bottom: 20px;
+    padding-top: 20px;
+}
+.tuotenimi {
+    display: inline-block;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.pienemmalla {
+    font-size: 0-8em;
+}
+.punaisella {
+    color: #ec6707;
+}
+input, button {
+    border-width: 2px;
+    border-color: #cccccc;
+    border-style: solid;
+    font-size: 15px;
+    border-radius: 8px;
+    padding: 4px;
+    margin-right:15px;
+}
+button {
+    width: 100px;
+}
+.rnimi {
+    font-size:0.9em;
+    color: #bdbdbd;
+    padding-left: 15px;
+}
+.otsikko {
+    font-size: 2.5em;
+    font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    color: #ec6707;
+    display: inline-block;
+    padding-bottom: 10px;
+}
+.hinta {
+    color: #ec6707;
+}
+label {
+    font-size:0.9em;
+    color: #bdbdbd;
+    font-family: helvetica;
+}
+.puuttuu {
+    color: #86867f;
+    font-style: italic;
+}
+.palkki {
+    width: 111px;
+    display: inline-block;
+}
+/*taulukon sarakkeet*/
+.t-ean {
+    width: 130px;
+}
+.t-magento {
+    width: 110px;
+}
+.t-kategoria {
+    width: auto;
+}
+.t-kategoriapolku {
+    width: auto;
+}
+.myyntihinta, .normihinta, .varasto {
+    padding-right: 10px;
+}
