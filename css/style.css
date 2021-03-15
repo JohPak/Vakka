@@ -11,7 +11,7 @@ body {
 }
 .kuva {
     height: 100px;
-    padding: 5px;
+    padding: 7px;
     /* padding-top: 10px;
     padding-left: 10px; */
 }
@@ -40,8 +40,11 @@ td {
     font-size: 0.9em;
 }
 form {
-    padding-bottom: 20px;
-    padding-top: 20px;
+    border: 2px solid #62625e;
+    background-color: #62625e;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 .tuotenimi {
     display: inline-block;
@@ -83,8 +86,9 @@ button {
 }
 label {
     font-size:0.9em;
-    color: #bdbdbd;
+    color: beige;
     font-family: helvetica;
+    padding-right: 7px;
 }
 .puuttuu {
     color: #86867f;
