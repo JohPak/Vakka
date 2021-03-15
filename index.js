@@ -28,6 +28,7 @@ app.use(express.static(__dirname)); //NODEN käynnistyssijainti - saattaa muuttu
 // MUUT
 let word = "";
 let resultamount = 3; //haettavien hakutulosten määrä
+let filterresultsby = ""; // minkä perusteella tulokset järjestetään
 let searchresult = {
     brandi: "",
     price: "",
@@ -75,7 +76,7 @@ app.post('/', (req, res) => {
     }
     
     // määrittele kaikki muuttujat ennen urlia, jotta tarvittavat muuttujat sijoittuu urliin mukaan
-    let url = `https://eucs13.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15596371644669941&term=${word}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15596371644669941&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=rel&enableFilters=true&filterResults=&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
+    let url = `https://eucs13.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15596371644669941&term=${word}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15596371644669941&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=rel&enableFilters=true&filterResults=${filterresultsby}&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
     
         search.haku(url, word, {}) 
         .then(data => { 
@@ -84,33 +85,53 @@ app.post('/', (req, res) => {
         try {
 
         for (let i = 0; i < resultamount; i++) {
-            searchresult.price = "(" + data.result[i].price + " €)";
-            searchresult.saleprice = data.result[i].salePrice;
+            searchresult.price = `<span class="normihinta">${data.result[i].price} €</span>`;
+            searchresult.saleprice = `${data.result[i].salePrice} €`;
             // poistetaan normihinta, mikäli se on sama kuin saleprice
                 if (data.result[i].salePrice == data.result[i].price) {
                     searchresult.price = "";
                 }
                 // jos tarjoushinta on voimassa, muutetaan tarjoushinta punaiseksi
                 else if (data.result[i].price) {
-                    searchresult.saleprice = `<span class="punaisella">${data.result[i].salePrice}</span>`;
+                    searchresult.saleprice = `<span class="punaisella">${data.result[i].salePrice} €</span>`;
                 }
-            searchresult.image = data.result[i].image.replace("needtochange/","");
-            searchresult.instock = data.result[i].inStock;
+
+            // laitetaan oletuskuva, mikäli kuvaa ei ole
+            // var beverage = (age >= 21) ? "Beer" : "Juice";
+            searchresult.image = (data.result[i].image == "") ? "https://www.minimani.fi/media/catalog/product/placeholder/default/minimaniph.png" : data.result[i].image.replace("needtochange/","");
+
+            // ternääri: onko varastoarvo yes ? true=kyllä : false=ei
+            searchresult.instock = (data.result[i].inStock == "yes") ? `<span class="vihrealla">kyllä (${data.result[i].inStock})</span>` : `<span class="punaisella">ei (${data.result[i].inStock})</span>`;
+
+
             searchresult.magentoid = data.result[i].id;
             searchresult.ean = data.result[i].sku;
-            searchresult.weight = data.result[i].weight + " kg";
+            searchresult.weight = +data.result[i].weight.toString() + " kg"; //plussa edessä muuttaa numeroksi, tostring perässä tekstiksi poistaen samalla ylimääräiset nollat
             // mikäli tuotteella ei painoa, niin:
             if (!data.result[i].weight) {
                 searchresult.weight = `<span class="puuttuu">ei painoa</span>`
             }
             //siivotaan ryönää pois
-            searchresult.wholecategory = data.result[i].klevu_category.replace(`KLEVU_PRODUCT;;`, "");
-                searchresult.wholecategory = searchresult.wholecategory.replace(`@ku@kuCategory@ku@`, "");
+            searchresult.wholecategory = data.result[i].klevu_category.replace(`KLEVU_PRODUCT;;`, "").replace(`KLEVU_PRODUCT`, "").replace(`@ku@kuCategory@ku@`, "");
+
+            // jos wholecategory sisältää merkkejä, siivotaan ne
+            if (searchresult.wholecategory != undefined) {
+                
                 while (searchresult.wholecategory.match(`;;`) || searchresult.wholecategory.match(`;`)) {
                     searchresult.wholecategory = searchresult.wholecategory.replace(`;;`, `. `);
                     searchresult.wholecategory = searchresult.wholecategory.replace(`;`, ` > `);
                 }
-            searchresult.category = data.result[i].category;
+            }
+            // jos category sisältää merkkejä, siivotaan ne
+            searchresult.category = (data.result[i].category == undefined) ? "" : data.result[i].category; 
+            if (searchresult.category != undefined) {
+                // lisää ryönän siivousta
+                    while (searchresult.category.match(`;;`) || searchresult.category.match(`;`)) {
+                        searchresult.category = searchresult.category.replace(`;;`, `. `);
+                        searchresult.category = searchresult.category.replace(`;`, ` > `);
+                    }
+
+            }
             searchresult.url = data.result[i].url;
             searchresult.name = data.result[i].name;
             // mikäli tuotteella ei ole brändiä, poistetaan kentästä "undefined"-merkintä
@@ -124,9 +145,9 @@ app.post('/', (req, res) => {
             searchresult = {}; // luodaan uusi objekti seuraavaa tuotetta varten
         }
     } catch (error) {
-         console.log("ups, for:issa/tuotetiedoissa jotain pielessä" + error);
+         console.log("VIRHETTÄ pukkaa, katopas: " + error);
     }
-console.log(productarray);
+// console.log(productarray);
 
 let html = fs.readFileSync("./views/main.html").toString("utf-8");
         let taulukko = "";
@@ -137,10 +158,10 @@ let html = fs.readFileSync("./views/main.html").toString("utf-8");
             <div class="tietodiv">
                 <span class="brandi">${productarray[index].brandi}</span><br>
                 <span class="tuotenimi">${productarray[index].name}</span><br>
-                <span class="myyntihinta">${productarray[index].saleprice} €</span>
-                <span class="normihinta">${productarray[index].price}</span>
-                <span class="varasto">Varastossa: ${productarray[index].instock}</span><br>
-                <span class="paino">${productarray[index].weight}</span><br>
+                <span class="myyntihinta">${productarray[index].saleprice}</span>
+                ${productarray[index].price}
+                <span class="varasto">Varastossa: ${productarray[index].instock}</span>
+                <span class="paino">${productarray[index].weight}</span><br><br>
                 <span class="url"><a href="${productarray[index].url}" target="_blank">${productarray[index].url}</a></span><br>
 <br>
 
@@ -168,8 +189,9 @@ let html = fs.readFileSync("./views/main.html").toString("utf-8");
 
        //etsitään main.html:stä div, jonka sisältö korvataan uudella (<div class="main">TÄMÄ VÄLI KORVAUTUU</div>)
         let taydennetty = html.replace(/(?<=\<div class="main">)(.*?)(?=\<\/div>)/g, taulukko);
+
         //etsitään hakukenttä ja palautetaan haettu sana siihen takaisin
-        // taydennetty = html.replace(/(?<=hakusana" value=")(.*?)(?="\>\<label for=)/g, word);
+        taydennetty = taydennetty.replace(`hakusana" value=""`, `hakusana" value="${word}"`);
 
         res.send(taydennetty);
 
