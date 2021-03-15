@@ -134,3 +134,7 @@ label {
     display: inline-block;
     margin: 0;
 }
+.logo {
+    height: 29px;
+    padding-right: 10px;
+}
