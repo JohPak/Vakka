@@ -2,7 +2,7 @@ const fetch = require("node-fetch");
 
 
 // Example POST method implementation:
-async function haku(url, term, data = {}) {
+async function haku(url, data = {}) {
     
     // Default options are marked with *
     const response = await fetch(url, {

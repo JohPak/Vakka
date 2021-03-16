@@ -22,6 +22,19 @@
         <input autofocus type="text" title="Hae nimellä, ean-koodilla tai magento-id:llä" name="hakusana" value="">
         <label for="hakumaara">Hakutulosten määrä max: </label>
         <input type="text" id="input-hakumaara" name="hakumaara" value="10" size="3">
+        <!-- <label for="kuvattomat">Vain kuvattomat </label>
+        <input type="checkbox" id="cb-kuvattomat" name="kuvattomat"> -->
+        
+        <label for="sorttaus">Järjestä: </label>
+        <select id="select-sorttaus" name="sorttaus" title="Huom. sorttaus tapahtuu vain näkyvillä olevien tuotteiden kesken. Kasvata tarvittaessa hakutulosten määrää.">
+            <option value="rel">Osuvuuden mukaan</option>
+            <option value="lth">Halvin ensin</option>
+            <option value="htl">Kallein ensin</option>
+            <option value="newfirst">Uusimmat ensin</option>
+            <option value="oldfirst">Vanhimmat ensin</option>
+        </select>
+
+
         <button type="submit" class="nappi">Hae</button>
     </form>
 

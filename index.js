@@ -30,6 +30,7 @@ let word = "";
 let resultamount = 3; //haettavien hakutulosten määrä
 let filterresultsby = ""; // minkä perusteella tulokset järjestetään
 let html = fs.readFileSync("./views/main.html").toString("utf-8");
+let withoutimages = "";
 let searchresult = {
     brandi: "",
     price: "",
@@ -66,10 +67,12 @@ app.post('/', (req, res) => {
     word = req.body.hakusana;
     resultamount = req.body.hakumaara;
     productarray.length = 0; //tyhjätään taulukko uutta hakua varten
+    filterresultsby = req.body.sorttaus;
+    withoutimages = req.body.kuvattomat;
     
     // määrittele kaikki muuttujat ennen urlia, jotta tarvittavat muuttujat sijoittuu urliin mukaan
     // huomaa hakusanan muutos enkoodatuksi! Muuten haku ei toimi ääkkösillä
-    let url = `https://eucs13.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15596371644669941&term=${encodeURIComponent(word)}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15596371644669941&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=rel&enableFilters=true&filterResults=${filterresultsby}&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
+    let url = `https://eucs13.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15596371644669941&term=${encodeURIComponent(word)}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15596371644669941&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=${filterresultsby}&enableFilters=false&filterResults=&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
     
         search.haku(url, {}) 
         .then(data => { 
@@ -77,29 +80,30 @@ app.post('/', (req, res) => {
 
         // jos hakusana on <=1 merkkiä, pudotetaan haettavien tulosten määrä nollaksi
         if (word.length <=1) {
-            resultamount = 0;
-            console.log("hakusanan pituus liian lyhyt, nollataan hakumäärä");
+            console.log("hakusanan pituus liian lyhyt");
             sendThis(html.replace(/(?<=\<div class="main">)(.*?)(?=\<\/div>)/g, `<span class="virhe">Hakusana liian lyhyt/puuttuu</span>`));
         }
         let findingsamount = data.meta.totalResultsFound;
 
         // TÄMÄ TÄRKEÄ. Mikäli for-lause yrittää luupata enemmän hakutuloksia kuin niitä on tarjolla, haku kaatuu.
+        // jos hakumäärä > löydettyjen määrä, muuta hakumäärä löydettyjen määräksi
         resultamount = (resultamount > findingsamount) ? findingsamount : resultamount;
+
 
     try {
         for (let i = 0; i < resultamount; i++) {
             
             if (data.result[i].price != undefined && data.result[i].price != "") {
-                searchresult.price = `<span class="normihinta">${data.result[i].price} €</span>`;
+                searchresult.price = `<span class="normihinta">${parseFloat(data.result[i].price).toFixed(2)} €</span>`;
             }
-                searchresult.saleprice = `${data.result[i].salePrice} €`;
+                searchresult.saleprice = `${parseFloat(data.result[i].salePrice).toFixed(2)} €`;
                 // poistetaan normihinta, mikäli se on sama kuin saleprice
-                if (data.result[i].salePrice == data.result[i].price) {
+                if (parseFloat(data.result[i].salePrice).toFixed(2) == parseFloat(data.result[i].price).toFixed(2)) {
                     searchresult.price = "";
                 }
                 // jos tarjoushinta on voimassa, muutetaan tarjoushinta punaiseksi
                 else if (data.result[i].price) {
-                    searchresult.saleprice = `<span class="punaisella">${data.result[i].salePrice} €</span>`;
+                    searchresult.saleprice = `<span class="punaisella">ale ${parseFloat(data.result[i].salePrice).toFixed(2)} €</span>`;
                 }
          
                 // laitetaan oletuskuva, mikäli kuvaa ei ole
@@ -107,15 +111,17 @@ app.post('/', (req, res) => {
                 searchresult.image = (data.result[i].image == "") ? "https://www.minimani.fi/media/catalog/product/placeholder/default/minimaniph.png" : data.result[i].image.replace("needtochange/","");
     
                 // ternääri: onko varastoarvo yes ? true=kyllä : false=ei
-                searchresult.instock = (data.result[i].inStock == "yes") ? `<span class="vihrealla">kyllä (${data.result[i].inStock})</span>` : `<span class="punaisella">ei (${data.result[i].inStock})</span>`;
+                searchresult.instock = (data.result[i].inStock == "yes") ? `<span class="vihrealla">kyllä</span>` : `<span class="punaisella">ei</span>`;
     
                 searchresult.magentoid = data.result[i].id;
                 searchresult.ean = data.result[i].sku;
+                
                 searchresult.weight = +data.result[i].weight.toString() + " kg"; //plussa edessä muuttaa numeroksi, tostring perässä tekstiksi poistaen samalla ylimääräiset nollat
                 // mikäli tuotteella ei painoa, niin:
                 if (!data.result[i].weight) {
                     searchresult.weight = `<span class="puuttuu">ei painoa</span>`
                 }
+
                 //siivotaan ryönää pois
                 searchresult.wholecategory = data.result[i].klevu_category.replace(`KLEVU_PRODUCT;;`, "").replace(`KLEVU_PRODUCT`, "").replace(`@ku@kuCategory@ku@`, "");
         
@@ -139,14 +145,13 @@ app.post('/', (req, res) => {
                 
                 searchresult.url = data.result[i].url;
                 searchresult.name = data.result[i].name;
+
                 // mikäli tuotteella ei ole brändiä, poistetaan kentästä "undefined"-merkintä
-                if (data.result[i].brandit == undefined || data.result[i].brandit == "undefined") {
-                    searchresult.brandi = `<span class="puuttuu">ei brändiä</span>`;
-                }
-                else {
-                    searchresult.brandi = data.result[i].brandit;
-                    }
+                searchresult.brandi = (data.result[i].brandit == undefined || data.result[i].brandit == "undefined") ? `<span class="puuttuu">ei brändiä</span>` : data.result[i].brandit;
+                
+                // sijoita valmis tuotepläjäys taulukkoon
                 productarray.push(searchresult);
+
                 searchresult = {}; // luodaan uusi objekti seuraavaa tuotetta varten
                 
  
@@ -158,6 +163,17 @@ app.post('/', (req, res) => {
          sendThis(html.replace(/(?<=\<div class="main">)(.*?)(?=\<\/div>)/g, `<span class="virhe"><h2>Noniin</h2>Nyt sä rikoit sen.<br><br>${error}<br><br>${JSON.stringify(data)}</span>`));
         }
         // console.log(productarray);
+            if (filterresultsby == "newfirst") {
+                // sortataan productarray magentoidn mukaan (UUSIMMAT ENSIN)
+                productarray.sort(function(a, b){
+                    return b.magentoid-a.magentoid
+                })
+            } else if (filterresultsby == "oldfirst") {
+                // sortataan productarray magentoidn mukaan (VANHIMMAT ENSIN)
+                productarray.sort(function(a, b){
+                    return a.magentoid-b.magentoid
+                })
+            }
 
         let taulukko = `<div class="tulosmaara">Näytetään ${resultamount} / ${findingsamount} hakutuloksesta.</div>`;
         for (let index = 0; index < productarray.length; index++) {
@@ -167,10 +183,10 @@ app.post('/', (req, res) => {
             <div class="kuvadiv"><a href="${productarray[index].url}" target="_blank"><img class="kuva" src="${productarray[index].image}"></a></div>
             <div class="tietodiv">
                 <span class="brandi">${productarray[index].brandi}</span><br>
-                <span class="tuotenimi">${productarray[index].name}</span><br>
+                <span class="tuotenimi"><a href="${productarray[index].url}" id="nimilinkki" target="_blank">${productarray[index].name}</a></span><br>
                 <span class="myyntihinta">${productarray[index].saleprice}</span>
                 ${productarray[index].price}
-                <span class="varasto">Varastossa: ${productarray[index].instock}</span>
+                <span class="varasto">Ostettavissa vk:sta: ${productarray[index].instock}</span>
                 <span class="paino">${productarray[index].weight}</span><br><br>
                 <span class="url"><a href="${productarray[index].url}" target="_blank">${productarray[index].url}</a></span><br>
                 <br>
@@ -195,13 +211,30 @@ app.post('/', (req, res) => {
                  </div><br>
                 `;
             } // END TAULUKKO FOR
-
+    
 
        //etsitään main.html:stä div, jonka sisältö korvataan uudella (<div class="main">TÄMÄ VÄLI KORVAUTUU</div>)
         let taydennetty = html.replace(/(?<=\<div class="main">)(.*?)(?=\<\/div>)/g, taulukko);
 
         //etsitään hakukenttä ja palautetaan haettu sana siihen takaisin
         taydennetty = taydennetty.replace(`hakusana" value=""`, `hakusana" value="${word}"`);
+
+        // palautetaan käyttäjän valitsema arvo select-boksiin..huhheijaa
+        if (filterresultsby == "lth") {
+            taydennetty = taydennetty.replace(`<option value="lth">`, `<option value="lth" selected>`);
+        } else if (filterresultsby == "htl") {
+            taydennetty = taydennetty.replace(`<option value="htl">`, `<option value="htl" selected>`);    
+        } else if (filterresultsby == "rel") {
+            taydennetty = taydennetty.replace(`<option value="rel">`, `<option value="rel" selected>`);        
+        } else if (filterresultsby == "newfirst") {
+            taydennetty = taydennetty.replace(`<option value="newfirst">`, `<option value="newfirst" selected>`);
+        } else if (filterresultsby == "oldfirst") {
+            taydennetty = taydennetty.replace(`<option value="oldfirst">`, `<option value="oldfirst" selected>`);
+        }
+        
+        
+        
+
         sendThis(taydennetty = taydennetty.replace(`name="hakumaara" value="10"`, `name="hakumaara" value="${resultamount}"`));
 
         // LÄHETTÄJÄ
