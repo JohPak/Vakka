@@ -25,6 +25,7 @@ body {
 }
 :any-link {
     color: #86867f;
+    text-decoration: none;
 }
 #nimilinkki {
     color: beige;
