@@ -4,7 +4,7 @@ body {
     font-size: 0.9em;
     line-height: 1.1em;
 }
-.taulukko {
+.taulukko, .t-kategoria a {
     color: beige;
     font-family: helvetica;
     border: 2px solid #62625e;
@@ -165,4 +165,33 @@ label {
     padding-bottom: 7px;
     padding-left: 8px;
     font-size: 0.9em;
+}
+#pvm {
+    font-family: helvetica;
+    font-size: 0.8em;
+    color: #bdbdbd;
+    text-align: right;
+    width: 75%;
+    display: block;
+    float: right;
+    margin-top: 20px;
+    margin-right: 10px;
+}
+#toggle {
+    height: 31px;
+    position: relative;
+    top: 10px;
+}
+.paper {
+    /* height: 70vh; */
+    width: 20vw;
+    background-color: beige;
+    padding: 10px;
+    -webkit-box-shadow: -4px 4px 5px 0px rgba(0,0,0,0.2);
+    -moz-box-shadow: -4px 4px 5px 0px rgba(0,0,0,0.2);
+    box-shadow: -4px 4px 5px 0px rgba(0,0,0,0.2);
+    z-index: 99;
+    position: absolute;
+    border-radius: 5px;
+    display: none;
 }

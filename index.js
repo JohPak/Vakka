@@ -33,6 +33,7 @@ let filterresultsby = ""; // minkä perusteella tulokset järjestetään
 let html = fs.readFileSync("./views/main.html").toString("utf-8");
 let withoutimages = "";
 let productarray = [];
+let eanstoshow = "";
 let searchresult = {
     brandi: "",
     price: "",
@@ -74,7 +75,10 @@ app.post('/', (req, res) => {
     // huomaa hakusanan muutos enkoodatuksi! Muuten haku ei toimi ääkkösillä
     let url = `https://eucs13.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15596371644669941&term=${encodeURIComponent(word)}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15596371644669941&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=${filterresultsby}&enableFilters=false&filterResults=&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
     
+    // let url = `https://eucs11.ksearchnet.com/cloud-search/n-search/search?ticket=klevu-15488592134928913&term=${encodeURIComponent(word)}&paginationStartsFrom=0&sortPrice=false&ipAddress=undefined&analyticsApiKey=klevu-15488592134928913&showOutOfStockProducts=true&klevuFetchPopularTerms=false&klevu_priceInterval=500&fetchMinMaxPrice=true&klevu_multiSelectFilters=true&noOfResults=${resultamount}&klevuSort=${filterresultsby}&enableFilters=false&filterResults=&visibility=search&category=KLEVU_PRODUCT&sv=229&lsqt=&responseType=json`
 
+  
+        // TEHDÄÄN TUOTEHAKU kun käyttäjä on painanut hae-nappulaa
         search.haku(url, {}) 
         .then(data => { 
         //   console.log(data); // JSON data parsed by `data.json()` call
@@ -113,12 +117,19 @@ app.post('/', (req, res) => {
                 // laitetaan oletuskuva, mikäli kuvaa ei ole
                 // var beverage = (age >= 21) ? "Beer" : "Juice";
                 searchresult.image = (data.result[i].image == "") ? "https://www.minimani.fi/media/catalog/product/placeholder/default/minimaniph.png" : data.result[i].image.replace("needtochange/","");
+
+                // .replace("klevu_images/200X200","catalog/product") //klevukuvasta oikeaksi
+                // https://www.minimani.fi/media/catalog/product/6/4/6417839006006.jpg OIKEA
+                // https://www.minimani.fi/media/klevu_images/200X200/6/4/6417839006006.jpg VÄÄRÄ
     
                 // ternääri: onko varastoarvo yes ? true=kyllä : false=ei
                 searchresult.instock = (data.result[i].inStock == "yes") ? `<span class="vihrealla">kyllä</span>` : `<span class="punaisella">ei</span>`;
     
                 searchresult.magentoid = data.result[i].id;
                 searchresult.ean = data.result[i].sku;
+                eanstoshow += data.result[i].sku + "<br>";
+                // console.log(eanstoshow);
+                
                 
                 searchresult.weight = +data.result[i].weight.toString() + " kg"; //plussa edessä muuttaa numeroksi, tostring perässä tekstiksi poistaen samalla ylimääräiset nollat
                 // mikäli tuotteella ei painoa, niin:
@@ -152,7 +163,8 @@ app.post('/', (req, res) => {
                         }
                 }
                 // liitetään kategoriaan linkki
-                searchresult.category = `<a href="/" onclick="clickCat(${searchresult.category})">${searchresult.category}</a>`;
+                // searchresult.category = `<a href="/" onclick="clickCat(${searchresult.category})">${searchresult.category}</a>`;
+                searchresult.category = `<a href="https://www.minimani.fi/search/?q=${searchresult.category}" target="_blank">${searchresult.category}</a>`;
             } catch (error) {
                 console.log("KATEGORIAHAUSSA virhe " + error);
                 sendThis(html.replace(/(?<=\<div class="main">)(.*?)(?=\<\/div>)/g, `<span class="virhe"><h2>Noniin</h2>Nyt sä rikoit sen.<br><br>${error}<br><br>${JSON.stringify(data)}</span>`));
@@ -167,6 +179,9 @@ app.post('/', (req, res) => {
                 // sijoita valmis tuotepläjäys taulukkoon
                 productarray.push(searchresult);
 
+                // näyttää hakutulokset json-muodossa konsolissa
+                // console.log(JSON.stringify(searchresult));
+
                 searchresult = {}; // luodaan uusi objekti seuraavaa tuotetta varten
                 
         } //END FOR
@@ -174,23 +189,25 @@ app.post('/', (req, res) => {
     
         // console.log(productarray);
             if (filterresultsby == "newfirst") {
-                // sortataan productarray magentoidn mukaan (UUSIMMAT ENSIN)
+                // sortataan productarray magento-id:n mukaan (UUSIMMAT ENSIN)
                 productarray.sort(function(a, b){
                     return b.magentoid-a.magentoid
                 })
             } else if (filterresultsby == "oldfirst") {
-                // sortataan productarray magentoidn mukaan (VANHIMMAT ENSIN)
+                // sortataan productarray magento-id:n mukaan (VANHIMMAT ENSIN)
                 productarray.sort(function(a, b){
                     return a.magentoid-b.magentoid
                 })
             }
 
+        // "Näytetään 10 / 1009 hakutuloksesta."
         let taulukko = `<div class="tulosmaara">Näytetään ${resultamount} / ${findingsamount} hakutuloksesta.</div>`;
+        
         for (let index = 0; index < productarray.length; index++) {
           taulukko += `
           
           <div class="taulukko">
-            <div class="kuvadiv"><a href="${productarray[index].url}" target="_blank"><img class="kuva" src="${productarray[index].image}"></a></div>
+            <div class="kuvadiv"><a href="${productarray[index].image.replace('klevu_images/200X200','catalog/product')}" target="_blank"><img class="kuva" src="${productarray[index].image}"></a></div>
             <div class="tietodiv">
                 <span class="brandi">${productarray[index].brandi}</span><br>
                 <span class="tuotenimi"><a href="${productarray[index].url}" id="nimilinkki" target="_blank">${productarray[index].name}</a></span><br>
@@ -228,6 +245,10 @@ app.post('/', (req, res) => {
 
         //etsitään hakukenttä ja palautetaan haettu sana siihen takaisin
         taydennetty = taydennetty.replace(`hakusana" value=""`, `hakusana" value="${word}"`);
+        
+        //etsitään enareille tarkoitettu loota ja sijoitetaan enarit siihen
+        taydennetty = taydennetty.replace(`class="paper">`, `class="paper" onClick="this.select();">${eanstoshow}`);
+        // console.log(taydennetty);
 
         // palautetaan käyttäjän valitsema arvo select-boksiin..huhheijaa
         if (filterresultsby == "lth") {
@@ -242,9 +263,7 @@ app.post('/', (req, res) => {
             taydennetty = taydennetty.replace(`<option value="oldfirst">`, `<option value="oldfirst" selected>`);
         }
         
-        
-        
-
+        // lähetetään sivun sisältö täydennettynä tuotteilla. Päivitetään samalla käyttäjän antama hakumäärä
         sendThis(taydennetty = taydennetty.replace(`name="hakumaara" value="10"`, `name="hakumaara" value="${resultamount}"`));
 
         // LÄHETTÄJÄ
