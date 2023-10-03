@@ -95,6 +95,11 @@ app.post('/', (req, res) => {
         resultamount = (resultamount > findingsamount) ? findingsamount : resultamount;    
 
         for (let i = 0; i < resultamount; i++) {
+            // Lisää tämä tarkistus loopin alkuun
+            if (!data.result[i]) {
+                console.log(`No result data for index ${i}`);
+                continue;  // skip to next iteration
+            }
             try {
                 if (data.result[i].price != undefined && data.result[i].price != "") {
                     searchresult.price = `<span class="normihinta">${parseFloat(data.result[i].price).toFixed(2)} €</span>`;
@@ -199,6 +204,9 @@ app.post('/', (req, res) => {
                     return a.magentoid-b.magentoid
                 })
             }
+
+    
+            
 
         // "Näytetään 10 / 1009 hakutuloksesta."
         let taulukko = `<div class="tulosmaara">Näytetään ${resultamount} / ${findingsamount} hakutuloksesta.</div>`;
